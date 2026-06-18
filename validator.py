@@ -16,18 +16,19 @@ from filters.harmonic_filter   import run as harmonic_run
 from filters.moebius_filter    import run as moebius_run
 from filters.topology_filter   import run as topology_run
 from filters.singularity_filter import run as singularity_run
+from filters.prime_spectrum_filter import run as prime_spectrum_run
 
 FILTERS = {
-    "syntax":      syntax_run,
-    "algebra":     algebra_run,
-    "logic":       logic_run,
-    "numeric":     numeric_run,
-    "harmonic":    harmonic_run,
-    "moebius":     moebius_run,
-    "topology":    topology_run,
-    "singularity": singularity_run,
+    "syntax":        syntax_run,
+    "algebra":       algebra_run,
+    "logic":         logic_run,
+    "numeric":       numeric_run,
+    "harmonic":      harmonic_run,
+    "moebius":       moebius_run,
+    "topology":      topology_run,
+    "singularity":   singularity_run,
+    "prime_spectrum": prime_spectrum_run,
 }
-
 
 def validate(equation: str) -> dict:
     """Parsuje wyrażenie raz, uruchamia wszystkie filtry Λ–τ–ρ."""
