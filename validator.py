@@ -17,6 +17,8 @@ from filters.moebius_filter    import run as moebius_run
 from filters.topology_filter   import run as topology_run
 from filters.singularity_filter import run as singularity_run
 from filters.prime_spectrum_filter import run as prime_spectrum_run
+from filters.information_filter import run as information_run
+
 
 FILTERS = {
     "syntax":        syntax_run,
