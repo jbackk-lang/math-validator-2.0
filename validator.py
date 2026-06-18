@@ -7,7 +7,9 @@ Naprawki względem oryginalnego repo:
 3. Wszystkie 8 filtrów wywoływane (oryginał wywoływał tylko 2)
 4. Routing przez słownik — łatwe dodawanie nowych filtrów
 """
+
 from core import parse
+from filters.information_filter import run as information_run
 from filters.syntax_filter     import run as syntax_run
 from filters.algebra_filter    import run as algebra_run
 from filters.logic_filter      import run as logic_run
@@ -17,8 +19,6 @@ from filters.moebius_filter    import run as moebius_run
 from filters.topology_filter   import run as topology_run
 from filters.singularity_filter import run as singularity_run
 from filters.prime_spectrum_filter import run as prime_spectrum_run
-from filters.information_filter import run as information_run
-
 
 FILTERS = {
     "syntax":        syntax_run,
