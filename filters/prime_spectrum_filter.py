@@ -26,11 +26,9 @@ def _classify_spectrum(gaps):
     if len(gaps) < 3:
         return "too_few_primes"
 
-    # porównujemy gaps z logarytmem indeksu
     xs = list(range(1, len(gaps) + 1))
     logs = [log(x + 1) for x in xs]
 
-    # normalizacja do [0,1] żeby nie bawić się w regresję
     def norm(vs):
         vmin, vmax = min(vs), max(vs)
         if vmax == vmin:
@@ -40,7 +38,6 @@ def _classify_spectrum(gaps):
     g_n = norm(gaps)
     l_n = norm(logs)
 
-    # prosty „anty‑błąd”: średnia różnica
     diff = sum(abs(a - b) for a, b in zip(g_n, l_n)) / len(g_n)
 
     if diff < 0.25:
@@ -49,7 +46,6 @@ def _classify_spectrum(gaps):
 
 
 def run(p: ParsedExpr) -> dict:
-    # jeśli parsowanie się nie udało — kończymy
     if p.error:
         return {
             "status": "error",
@@ -57,7 +53,6 @@ def run(p: ParsedExpr) -> dict:
             "notes": ["nie można przeanalizować widma liczb pierwszych — błąd parse()"]
         }
 
-    # interesuje nas tylko przypadek, gdy wyrażenie jest liczbą całkowitą N
     if not (p.sym is not None and p.sym.is_integer):
         return {
             "status": "skip",
@@ -81,7 +76,6 @@ def run(p: ParsedExpr) -> dict:
             "notes": []
         }
 
-    # zakres: do N^(1/3)
     N_third = int(round(N ** (1/3)))
     if N_third < 3:
         N_third = 3
