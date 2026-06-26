@@ -69,11 +69,13 @@ def _analyse(p: ParsedExpr) -> dict:
                 try:
                     lp = limit(p.sym, p.x, s, '+')
                     lm = limit(p.sym, p.x, s, '-')
+
                     # Skręt τ: lim(0⁺) i lim(0⁻) mają przeciwne znaki nieskończoności
                     is_twist = (
                         (lp == oo  and lm == -oo) or
                         (lp == -oo and lm == oo)
                     )
+
                     sing_details.append({
                         "point": str(s),
                         "lim_plus":  str(lp),
@@ -85,6 +87,7 @@ def _analyse(p: ParsedExpr) -> dict:
                             "osobliwość bez skrętu (lim jednostronne zgodne)"
                         )
                     })
+
                 except Exception as le:
                     sing_details.append({
                         "point": str(s),
@@ -93,6 +96,7 @@ def _analyse(p: ParsedExpr) -> dict:
                         "twist": None,
                         "note": f"błąd obliczania limitu: {le}"
                     })
+
         except Exception as e:
             notes.append(f"błąd singularities(): {e}")
 
