@@ -31,6 +31,34 @@ FILTERS = {
     "singularity":   singularity_run,
     "prime_spectrum": prime_spectrum_run,
 }
+# --- Warstwa stabilności λ→τ→ρ (10 pętli, bifurkacja po 5) ---
+
+class StabilityLayer:
+    def __init__(self):
+        self.loop_index = 0
+
+    def step(self):
+        self.loop_index += 1
+        angle = 72 * self.loop_index
+
+        if self.loop_index <= 5:
+            phase = "UNDEFINED"   # stan nieoznaczony materii
+        else:
+            phase = "FORCED"      # system musi dążyć do domknięcia albo cofnięcia
+
+        if angle < 720:
+            orientation = "RETURNING" if phase == "FORCED" else "M_PRIME"
+        else:
+            orientation = "CLOSED"  # M²-closure
+
+        return {
+            "cycle": self.loop_index,
+            "angle": angle,
+            "phase": phase,
+            "orientation": orientation
+        }
+
+stability = StabilityLayer()
 
 def validate(equation: str) -> dict:
     """Parsuje wyrażenie raz, uruchamia wszystkie filtry Λ–τ–ρ."""
