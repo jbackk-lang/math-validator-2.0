@@ -4,6 +4,7 @@ topology_filter.py — warstwa Λ–τ–ρ.
 τ: score transformacji.
 ρ: delegowane do singularity_filter (z cache).
 """
+
 from core import ParsedExpr
 from filters.singularity_filter import run as singularity_run
 
@@ -22,9 +23,9 @@ def run(p: ParsedExpr) -> dict:
     # τ — score transformacji
     tau = 0
     if "/" in p.raw:      tau += 1
-    if "**-1" in p.raw:  tau += 1
-    if "sqrt" in p.raw:  tau += 1
-    if "^" in p.raw:     tau += 1
+    if "**-1" in p.raw:   tau += 1
+    if "sqrt" in p.raw:   tau += 1
+    if "^" in p.raw:      tau += 1
 
     # ρ — z singularity_filter (cached)
     rho = singularity_run(p)
