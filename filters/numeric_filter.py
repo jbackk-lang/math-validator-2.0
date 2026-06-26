@@ -16,6 +16,7 @@ def run(p: ParsedExpr) -> dict:
 
         real_sols    = []
         complex_sols = []
+
         for s in sols:
             try:
                 if sym_im(s) == 0:
@@ -38,6 +39,7 @@ def run(p: ParsedExpr) -> dict:
             "count": len(sols),
             "notes": notes
         }
+
     except Exception as e:
         return {
             "status": "error",
