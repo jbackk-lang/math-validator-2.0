@@ -50,3 +50,8 @@ def run(p: ParsedExpr) -> dict:
 
     return {
         "status": "ok",
+        "moebius_density": score,
+        "level": level,
+        "indicators": indicators,
+        "inversion": ("**-1" in raw or "/" in raw)
+    }
