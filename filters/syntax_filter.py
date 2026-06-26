@@ -12,6 +12,7 @@ def run(p: ParsedExpr) -> dict:
             "message": p.error,
             "notes": ["wyrażenie nie mogło być sparsowane przez SymPy"]
         }
+
     return {
         "status": "ok",
         "message": "składnia poprawna"
