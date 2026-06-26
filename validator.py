@@ -31,6 +31,7 @@ FILTERS = {
     "singularity":   singularity_run,
     "prime_spectrum": prime_spectrum_run,
 }
+
 # --- Warstwa stabilności λ→τ→ρ (10 pętli, bifurkacja po 5) ---
 
 class StabilityLayer:
@@ -61,6 +62,13 @@ class StabilityLayer:
 stability = StabilityLayer()
 
 def validate(equation: str) -> dict:
-    """Parsuje wyrażenie raz, uruchamia wszystkie filtry Λ–τ–ρ."""
+    """Parsuje wyrażenie raz, uruchamia wszystkie filtry Λ–τ–ρ + warstwę stabilności."""
     p = parse(equation)
-    return {name: fn(p) for name, fn in FILTERS.items()}
+
+    filter_results = {name: fn(p) for name, fn in FILTERS.items()}
+    stability_state = stability.step()
+
+    return {
+        "filters":   filter_results,
+        "stability": stability_state,
+    }
