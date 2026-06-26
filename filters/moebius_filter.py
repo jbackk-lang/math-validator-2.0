@@ -6,6 +6,7 @@ Naprawiono: usunięto zduplikowaną definicję run() — Python brał ostatnią,
 pierwsza była martwym kodem.
 """
 from core import ParsedExpr
+import re
 
 
 def run(p: ParsedExpr) -> dict:
@@ -32,24 +33,20 @@ def run(p: ParsedExpr) -> dict:
         indicators.append(f"parentheses (cycles={p.cycles})")
 
     # Potęgi ujemne ogólnie (np. x**(-2))
-    import re
     neg_powers = re.findall(r'\*\*\s*\(\s*-', raw)
     if neg_powers:
         score += 1
         indicators.append(f"negative powers ({len(neg_powers)}×)")
 
-    level = "none"
+    # Poziom intensywności
     if score >= 4:
         level = "high"
     elif score >= 2:
         level = "medium"
     elif score >= 1:
         level = "low"
+    else:
+        level = "none"
 
     return {
         "status": "ok",
-        "moebius_density": score,
-        "level": level,
-        "indicators": indicators,
-        "inversion": ("**-1" in raw or "/" in raw)
-    }
