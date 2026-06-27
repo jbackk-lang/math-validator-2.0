@@ -66,3 +66,33 @@ py -3.14 -m uvicorn api:app --reload
 uvicorn app:app --reload
 
 http://127.0.0.1:8000/validate?expr=1/(x-1)
+
+## 🧩 Przykłady problemów milenijnych (dla testów walidatora)
+
+Poniżej dwa krótkie przykłady równań związanych z problemami milenijnymi,
+które można przepuścić przez `math-validator-2.0` w celu analizy strukturalnej.
+
+### 1. Hipoteza Riemanna
+Wyrażenie definiujące funkcję ζ(s):
+
+ζ(s) = ∑_{n=1}^{∞} 1 / n^s
+
+
+Walidator może wykryć:
+- niejednoznaczność dziedziny,
+- punkty osobliwe,
+- problemy mylne przy złej składni zapisu sumy.
+
+### 2. Równania Naviera–Stokesa
+Podstawowa forma równania ruchu płynu:
+
+∂u/∂t + (u · ∇)u = -∇p + νΔu
+
+
+Walidator może wykryć:
+- brak określenia zmiennych,
+- niekompletność operatorów,
+- strukturalne niespójności w zapisie.
+
+*(To nie są „rozwiązania”, tylko przykłady równań używanych w testach walidatora.)*
+
