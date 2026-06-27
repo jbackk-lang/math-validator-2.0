@@ -4,8 +4,8 @@ validator.py — jedyny publiczny entry point.
 Naprawki względem oryginalnego repo:
 1. Jedna definicja validate() (oryginał miał dwie — Python brał ostatnią)
 2. parse() wywoływane RAZ — ParsedExpr współdzielony przez wszystkie filtry
-3. Wszystkie 8 filtrów wywoływane (oryginał wywoływał tylko 2)
-4. Routing przez słownik — łatwe dodawanie nowych filtrów
+3. Wszystkie filtry Λ–τ–ρ wywoływane przez słownik
+4. Dodany filtr 'misleading' — wykrywa problemy mylne
 """
 
 from core import parse
@@ -19,17 +19,20 @@ from filters.moebius_filter    import run as moebius_run
 from filters.topology_filter   import run as topology_run
 from filters.singularity_filter import run as singularity_run
 from filters.prime_spectrum_filter import run as prime_spectrum_run
+from filters.misleading_filter import run as misleading_run
 
 FILTERS = {
-    "syntax":        syntax_run,
-    "algebra":       algebra_run,
-    "logic":         logic_run,
-    "numeric":       numeric_run,
-    "harmonic":      harmonic_run,
-    "moebius":       moebius_run,
-    "topology":      topology_run,
-    "singularity":   singularity_run,
+    "information":    information_run,
+    "syntax":         syntax_run,
+    "algebra":        algebra_run,
+    "logic":          logic_run,
+    "numeric":        numeric_run,
+    "harmonic":       harmonic_run,
+    "moebius":        moebius_run,
+    "topology":       topology_run,
+    "singularity":    singularity_run,
     "prime_spectrum": prime_spectrum_run,
+    "misleading":     misleading_run,
 }
 
 # --- Warstwa stabilności λ→τ→ρ (10 pętli, bifurkacja po 5) ---
@@ -53,16 +56,19 @@ class StabilityLayer:
             orientation = "CLOSED"  # M²-closure
 
         return {
-            "cycle": self.loop_index,
-            "angle": angle,
-            "phase": phase,
-            "orientation": orientation
+            "cycle":       self.loop_index,
+            "angle":       angle,
+            "phase":       phase,
+            "orientation": orientation,
         }
 
 stability = StabilityLayer()
 
 def validate(equation: str) -> dict:
-    """Parsuje wyrażenie raz, uruchamia wszystkie filtry Λ–τ–ρ + warstwę stabilności."""
+    """
+    Parsuje wyrażenie raz, uruchamia wszystkie filtry Λ–τ–ρ + warstwę stabilności.
+    Zwraca pełny słownik wyników filtrów oraz stan stabilności.
+    """
     p = parse(equation)
 
     filter_results = {name: fn(p) for name, fn in FILTERS.items()}
