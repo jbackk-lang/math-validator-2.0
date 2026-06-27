@@ -33,6 +33,22 @@ w szerszym kontekście logicznym.
 - przygotowane miejsce na integrację z TRM i TIMDR.
 
 ---
+Problemy mylne (MISLEADING)
+„Problem mylny” to wyrażenie, które:
+
+wygląda poprawnie,
+
+przechodzi podstawową składnię,
+
+ale jest niespójne logicznie lub niejednoznaczne.
+
+Przykłady:
+
+1=1=1
+
+(a=b=c)
+
+0^0=1 (zależne od kontekstu)
 
 ## ▶️ Jak używać
 
