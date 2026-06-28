@@ -85,3 +85,82 @@ def validate(equation: str) -> dict:
         "millennium_warning":    millennium_triggered,
         "millennium_open_count": open_count,
     }
+# filters/millennium_boundaries.py
+# Warunki brzegowe dla 7 Problemów Milenijnych Clay Institute
+
+BOUNDARIES = {
+    "P_vs_NP": {
+        "forbidden": [
+            "P=NP", "NP=coNP", "SAT solved in polytime",
+            "all NP problems reducible in P"
+        ],
+        "rule": "Nie wolno zakładać równoważności P i NP."
+    },
+
+    "Riemann": {
+        "forbidden": [
+            "all nontrivial zeros lie on 1/2",
+            "RH true", "RH proven", "critical line theorem"
+        ],
+        "rule": "Nie wolno zakładać, że wszystkie zera nietrywialne leżą na Re(s)=1/2."
+    },
+
+    "Birch_Swinnerton_Dyer": {
+        "forbidden": [
+            "rank(E) equals order of zero",
+            "BSD proven", "L(E,1)=0 implies infinite rational points"
+        ],
+        "rule": "Nie wolno zakładać pełnej zgodności rzędu krzywej z zerem funkcji L."
+    },
+
+    "Yang_Mills": {
+        "forbidden": [
+            "mass gap proven", "YM gap exists",
+            "nonperturbative gauge mass"
+        ],
+        "rule": "Nie wolno zakładać istnienia masy w Yang–Mills bez dowodu."
+    },
+
+    "Navier_Stokes": {
+        "forbidden": [
+            "global regularity", "no blow-up",
+            "smooth solution for all time"
+        ],
+        "rule": "Nie wolno zakładać globalnej regularności Navier–Stokes."
+    },
+
+    "Poincare": {
+        "forbidden": [
+            "Poincare open", "Poincare unsolved"
+        ],
+        "rule": "Nie wolno twierdzić, że Poincaré jest OTWARTY — jest ROZWIĄZANY."
+    },
+
+    "Hodge": {
+        "forbidden": [
+            "all cohomology classes are harmonic",
+            "Hodge proven"
+        ],
+        "rule": "Nie wolno zakładać pełnej zgodności klas kohomologii z formami harmonicznymi."
+    }
+}
+
+
+def run(parsed):
+    expr = str(parsed.expr).lower()
+    violations = []
+
+    for name, data in BOUNDARIES.items():
+        for forbidden in data["forbidden"]:
+            if forbidden.lower() in expr:
+                violations.append({
+                    "problem": name,
+                    "violation": forbidden,
+                    "rule": data["rule"]
+                })
+
+    return {
+        "violated": len(violations) > 0,
+        "violations": violations,
+        "count": len(violations)
+    }
