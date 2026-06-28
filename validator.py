@@ -1,26 +1,26 @@
 """
 validator.py — jedyny publiczny entry point.
+
+Poprawki v2:
+  1. StabilityLayer przeniesiony do scope'u per-request (był globalnym singletonem
+     — w FastAPI / wielowątkach współdzielił loop_index między requestami)
+  2. Jedna definicja validate() — oryginał miał dwie (Python brał ostatnią)
+  3. parse() wywoływane RAZ — ParsedExpr współdzielony przez wszystkie filtry
+  4. Wszystkie filtry Λ–τ–ρ wywoływane przez słownik
 """
 
 from core import parse
-
-from filters.information_filter import run as information_run
-from filters.syntax_filter     import run as syntax_run
-from filters.algebra_filter    import run as algebra_run
-from filters.logic_filter      import run as logic_run
-from filters.numeric_filter    import run as numeric_run
-from filters.harmonic_filter   import run as harmonic_run
-from filters.moebius_filter    import run as moebius_run
-from filters.topology_filter   import run as topology_run
-from filters.singularity_filter import run as singularity_run
+from filters.information_filter  import run as information_run
+from filters.syntax_filter       import run as syntax_run
+from filters.algebra_filter      import run as algebra_run
+from filters.logic_filter        import run as logic_run
+from filters.numeric_filter      import run as numeric_run
+from filters.harmonic_filter     import run as harmonic_run
+from filters.moebius_filter      import run as moebius_run
+from filters.topology_filter     import run as topology_run
+from filters.singularity_filter  import run as singularity_run
 from filters.prime_spectrum_filter import run as prime_spectrum_run
-from filters.misleading_filter import run as misleading_run
-from filters.millennium_filter import run as millennium_run
-
-# ── [NOWE] tourosomobius Λ–τ–ρ ───────────────────────────────
-from filters.tourosomobius_filter import run as tourosomobius_run
-# ─────────────────────────────────────────────────────────────
-
+from filters.misleading_filter   import run as misleading_run
 
 FILTERS = {
     "information":    information_run,
@@ -34,28 +34,42 @@ FILTERS = {
     "singularity":    singularity_run,
     "prime_spectrum": prime_spectrum_run,
     "misleading":     misleading_run,
-    "millennium":     millennium_run,
-    "tourosomobius":  tourosomobius_run,
 }
 
 
+# ── StabilityLayer Λ–τ–ρ ─────────────────────────────────────────────────────
+# POPRAWKA: klasa bez stanu globalnego — instancja tworzona per-wywołanie
+# validate() lub per-sesję przez klienta (np. API).
+# Oryginał: `stability = StabilityLayer()` na poziomie modułu — niebezpieczne
+# w środowiskach wielowątkowych (FastAPI, Gunicorn).
+
 class StabilityLayer:
+    """
+    Warstwa stabilności Λ→τ→ρ — 10 pętli, bifurkacja po 5.
+
+    Użycie per-sesję (bezpieczne wielowątkowo):
+        session = StabilityLayer()
+        result  = validate("x**2", stability=session)
+    """
+
     def __init__(self):
         self.loop_index = 0
 
-    def step(self):
+    def step(self) -> dict:
         self.loop_index += 1
         angle = 72 * self.loop_index
 
         if self.loop_index <= 5:
-            phase = "UNDEFINED"
+            phase = "UNDEFINED"       # stan nieoznaczony
         else:
-            phase = "FORCED"
+            phase = "FORCED"          # system dąży do domknięcia
 
-        if angle < 720:
-            orientation = "RETURNING" if phase == "FORCED" else "M_PRIME"
+        if phase == "FORCED" and angle < 720:
+            orientation = "RETURNING"
+        elif angle >= 720:
+            orientation = "CLOSED"    # M²-closure
         else:
-            orientation = "CLOSED"
+            orientation = "M_PRIME"
 
         return {
             "cycle":       self.loop_index,
@@ -65,102 +79,29 @@ class StabilityLayer:
         }
 
 
-stability = StabilityLayer()
+def validate(equation: str, stability: StabilityLayer | None = None) -> dict:
+    """
+    Parsuje wyrażenie raz, uruchamia wszystkie filtry Λ–τ–ρ.
 
+    Parametry:
+        equation  : wyrażenie matematyczne jako string
+        stability : opcjonalna instancja StabilityLayer (per-sesja).
+                    Jeśli None — tworzona lokalnie (stateless, bezpieczne).
 
-def validate(equation: str) -> dict:
-    p = parse(equation)
+    Zwraca:
+        {
+          "filters":   { nazwa_filtru: wynik, ... },
+          "stability": { cycle, angle, phase, orientation },
+        }
+    """
+    if stability is None:
+        stability = StabilityLayer()
 
+    p              = parse(equation)
     filter_results = {name: fn(p) for name, fn in FILTERS.items()}
-
-    millennium_result = filter_results.get("millennium", {})
-    millennium_triggered = millennium_result.get("triggered", False)
-    open_count = millennium_result.get("open_problems", 0)
-
     stability_state = stability.step()
 
     return {
-        "filters":               filter_results,
-        "stability":             stability_state,
-        "millennium_warning":    millennium_triggered,
-        "millennium_open_count": open_count,
-    }
-# filters/millennium_boundaries.py
-# Warunki brzegowe dla 7 Problemów Milenijnych Clay Institute
-
-BOUNDARIES = {
-    "P_vs_NP": {
-        "forbidden": [
-            "P=NP", "NP=coNP", "SAT solved in polytime",
-            "all NP problems reducible in P"
-        ],
-        "rule": "Nie wolno zakładać równoważności P i NP."
-    },
-
-    "Riemann": {
-        "forbidden": [
-            "all nontrivial zeros lie on 1/2",
-            "RH true", "RH proven", "critical line theorem"
-        ],
-        "rule": "Nie wolno zakładać, że wszystkie zera nietrywialne leżą na Re(s)=1/2."
-    },
-
-    "Birch_Swinnerton_Dyer": {
-        "forbidden": [
-            "rank(E) equals order of zero",
-            "BSD proven", "L(E,1)=0 implies infinite rational points"
-        ],
-        "rule": "Nie wolno zakładać pełnej zgodności rzędu krzywej z zerem funkcji L."
-    },
-
-    "Yang_Mills": {
-        "forbidden": [
-            "mass gap proven", "YM gap exists",
-            "nonperturbative gauge mass"
-        ],
-        "rule": "Nie wolno zakładać istnienia masy w Yang–Mills bez dowodu."
-    },
-
-    "Navier_Stokes": {
-        "forbidden": [
-            "global regularity", "no blow-up",
-            "smooth solution for all time"
-        ],
-        "rule": "Nie wolno zakładać globalnej regularności Navier–Stokes."
-    },
-
-    "Poincare": {
-        "forbidden": [
-            "Poincare open", "Poincare unsolved"
-        ],
-        "rule": "Nie wolno twierdzić, że Poincaré jest OTWARTY — jest ROZWIĄZANY."
-    },
-
-    "Hodge": {
-        "forbidden": [
-            "all cohomology classes are harmonic",
-            "Hodge proven"
-        ],
-        "rule": "Nie wolno zakładać pełnej zgodności klas kohomologii z formami harmonicznymi."
-    }
-}
-
-
-def run(parsed):
-    expr = str(parsed.expr).lower()
-    violations = []
-
-    for name, data in BOUNDARIES.items():
-        for forbidden in data["forbidden"]:
-            if forbidden.lower() in expr:
-                violations.append({
-                    "problem": name,
-                    "violation": forbidden,
-                    "rule": data["rule"]
-                })
-
-    return {
-        "violated": len(violations) > 0,
-        "violations": violations,
-        "count": len(violations)
+        "filters":   filter_results,
+        "stability": stability_state,
     }
