@@ -1,37 +1,64 @@
-# filters/misleading_filter.py
+"""
+filters/misleading_filter.py — wykrywa wyrażenia mylące
 
-import re
+Poprawki v2:
+  - Nowy przypadek: x/x → upraszcza do 1 ale ma osobliwość (ukryta domena)
+    Porównuje sym (zewaluowane) z sym_raw (nieewaluowane): jeśli różne
+    i oryginał miał dzielenie → misleading
+  - Nowy przypadek: wyrażenia z has_division gdzie domena sym_raw ≠ Reals
+    ale sym daje Reals (zgubiona osobliwość po uproszczeniu)
+"""
 
-def run(p):
-    """
-    Filtr MISLEADING — wykrywa problemy mylne:
-    - wielokrotne '='
-    - łańcuchowe porównania
-    - niejednoznaczne konstrukcje
-    - 0^0
-    - x/x bez kontekstu
-    """
+from core import ParsedExpr
+from sympy import symbols, simplify, cancel, S
+from sympy.calculus.util import continuous_domain
 
-    expr = p.raw.replace(" ", "")
+x = symbols("x")
 
-    # 1. Wielokrotne '='
-    if expr.count("=") > 1:
-        return {"misleading": True, "reason": "multiple_equal_signs"}
 
-    # 2. a=b=c
-    if re.search(r"[a-zA-Z]+\=[a-zA-Z]+\=[a-zA-Z]+", expr):
-        return {"misleading": True, "reason": "chained_comparison"}
+def run(p: ParsedExpr) -> dict:
+    if not p.ok:
+        return {"ok": False, "error": p.error}
 
-    # 3. (a=b=c)
-    if re.search(r"\([^\)]*\=[^\)]*\=[^\)]*\)", expr):
-        return {"misleading": True, "reason": "chained_comparison_parentheses"}
+    issues = []
 
-    # 4. 0^0
-    if "0^0" in expr:
-        return {"misleading": True, "reason": "zero_power_zero"}
+    try:
+        s = simplify(p.sym)
 
-    # 5. x/x (może być 0/0)
-    if re.fullmatch(r"[a-zA-Z]+/[a-zA-Z]+", expr):
-        return {"misleading": True, "reason": "ambiguous_division"}
+        # ── Przypadek 1: upraszcza do 0 ale ma dzielnik ──────────────────────
+        if str(s) == "0" and p.has_division:
+            issues.append(
+                "misleading_zero: wyrażenie upraszcza się do 0, "
+                "ale dzielnik może być 0 dla pewnych x"
+            )
 
-    return {"misleading": False}
+        # ── Przypadek 2: upraszczalne ułamki (cancel) ─────────────────────────
+        try:
+            c = cancel(p.sym)
+            if str(c) != str(p.sym) and p.has_division:
+                issues.append(f"simplifiable_fraction: {p.sym} → {c}")
+        except Exception:
+            pass
+
+        # ── POPRAWKA: x/x i podobne — zgubiona osobliwość ────────────────────
+        # sym_raw ≠ sym AND has_division → sprawdź czy domena się różni
+        if p.sym_raw is not None and p.has_division:
+            try:
+                domain_raw = continuous_domain(p.sym_raw, x, S.Reals)
+                domain_sym = continuous_domain(p.sym,     x, S.Reals)
+                if domain_raw != domain_sym:
+                    issues.append(
+                        f"hidden_singularity: po uproszczeniu domena wygląda jak "
+                        f"{domain_sym}, ale oryginalne wyrażenie ma domenę {domain_raw}"
+                    )
+            except Exception:
+                pass
+
+    except Exception:
+        pass
+
+    return {
+        "misleading_issues": issues,
+        "count":             len(issues),
+        "ok":                True,
+    }
