@@ -2,6 +2,7 @@
 parser.py — cienka warstwa nad core.parse().
 Zachowany dla kompatybilności wstecznej z oryginalnym API.
 """
+
 from core import parse, ParsedExpr
 
 
