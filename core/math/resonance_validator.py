@@ -1,67 +1,125 @@
 import numpy as np
 from math import gcd
 
-def calculate_geometric_resonance(omega_input, omega_pivot, max_harmonic=8, tolerance=1e-3):
+class FieldResonanceValidator:
     """
-    Rygorystyczny test walidacyjny dla homogeniczności geometrii pól.
-    Sprawdza, czy stosunek częstotliwości wejściowej do punktu zwrotnego (pivot)
-    odpowiada czystym, wymiernym proporcjom topologicznym (m/n).
+    Sprawdza topologiczną homogeniczność granic pól w skalach makro, atomowej
+    oraz kwantowej (Photon Engine) przy użyciu bezwymiarowej analizy stosunków fourierowskich.
     
-    Terminologia oficjalna: Analiza spektralna rezonansu fali stojącej.
-    Terminologia ukryta (muzyczna): Detekcja konsonansu/dysonansu układu.
+    Weryfikuje zachowanie energii w punktach zwrotnych oraz wyznacza dynamiczne
+    wektory dążenia (gradienty pędu) dla struktur niedomkniętych.
     """
-    # 1. Obliczenie surowego stosunku częstotliwości układu
-    raw_ratio = omega_input / omega_pivot
     
-    best_m = 1
-    best_n = 1
-    min_delta = float('inf')
+    def __init__(self, max_harmonic=8, default_tolerance=1e-3):
+        self.max_harmonic = max_harmonic
+        self.default_tolerance = default_tolerance
+
+    def validate_boundary_state(self, omega_input, omega_pivot, tolerance=None):
+        """
+        Główna metoda walidacyjna analizująca stan sprzężenia pól.
+        
+        Parametry:
+        ----------
+        omega_input : float - Częstotliwość wzbudzenia / napływu energii układu.
+        omega_pivot : float - Naturalna częstotliwość rezonatora (punktu zwrotnego).
+        tolerance   : float - Opcjonalna czułość detekcji idealnego domknięcia.
+        
+        Zwraca:
+        -------
+        dict - Kompletny zestaw metryk topologicznych i wektorów ewolucji pola.
+        """
+        if tolerance is None:
+            tolerance = self.default_tolerance
+
+        # Zapobieganie dzieleniu przez zero przy skrajnych stanach brzegowych
+        if omega_pivot == 0:
+            raise ValueError("Częstotliwość punktu zwrotnego (omega_pivot) nie może wynosić 0.")
+
+        # 1. Wyznaczenie surowego stosunku częstotliwości (bezwymiarowa geometria)
+        raw_ratio = float(omega_input) / float(omega_pivot)
+        
+        best_m = 1
+        best_n = 1
+        min_delta = float('inf')
+        
+        # 2. Identyfikacja najbliższego teoretycznego węzła topologicznego (m:n)
+        for n in range(1, self.max_harmonic + 1):
+            m = round(raw_ratio * n)
+            if m == 0 or m > self.max_harmonic * 2:
+                continue
+                
+            delta = abs(raw_ratio - (m / n))
+            if delta < min_delta:
+                min_delta = delta
+                best_m = m
+                best_n = n
+
+        # Sprowadzenie ułamka m/n do formy nieskracalnej (węzeł podstawowy)
+        common_divisor = gcd(best_m, best_n)
+        m_prime = best_m // common_divisor
+        n_prime = best_n // common_divisor
+
+        # 3. Wyznaczenie Indeksu Spójności Geometrycznej (GRI)
+        # Określa gęstość symetrii w docelowym punkcie domknięcia układu
+        geometric_resonance_index = 1.0 / (m_prime * n_prime)
+        
+        # 4. Ocena domknięcia struktury (Warunek brzegowy jako wyznacznik stabilności)
+        is_structure_closed = min_delta <= tolerance
+        target_ratio = best_m / best_n
+
+        # 5. Wyznaczenie Wektora Ewolucji Pola (kierunek dążenia topologicznego)
+        if is_structure_closed:
+            evolution_direction = "stable"
+        else:
+            # Określenie, czy układ dąży do kontrakcji fazowej, czy ekspansji
+            evolution_direction = "contraction" if raw_ratio < target_ratio else "expansion"
+
+        # 6. Kalkulacja asymetrycznej siły gradientowej (Asymmetric Driving Force)
+        # Dla układów niedomkniętych generuje potencjał uogólniony (np. anizotropię pędu)
+        if is_structure_closed:
+            asymmetric_gradient_force = 0.0
+        else:
+            asymmetric_gradient_force = min_delta * geometric_resonance_index
+
+        # Zwrócenie kompletnego profilu walidacyjnego struktury pola
+        return {
+            "topological_node": f"{m_prime}:{n_prime}",
+            "raw_ratio": round(raw_ratio, 6),
+            "field_tension_delta": round(min_delta, 6),
+            "is_structure_closed": is_structure_closed,
+            "predicted_closure_point": round(target_ratio, 6),
+            "field_evolution_vector": evolution_direction,
+            "asymmetric_gradient_force": round(asymmetric_gradient_force, 6),
+            "geometric_resonance_index": round(geometric_resonance_index, 4)
+        }
+
+
+# =====================================================================
+# BLOK TESTOWY pipeline'u walidacji dla trzech skal geometrycznych
+# =====================================================================
+if __name__ == "__main__":
+    validator = FieldResonanceValidator(max_harmonic=8, default_tolerance=1e-3)
     
-    # 2. Szukanie najbliższego węzła topologicznego (liczby całkowite m, n)
-    for n in range(1, max_harmonic + 1):
-        # Znajdź najbliższe m dla danego n
-        m = round(raw_ratio * n)
-        if m == 0 or m > max_harmonic * 2:
-            continue
-            
-        delta = abs(raw_ratio - (m / n))
-        if delta < min_delta:
-            min_delta = delta
-            best_m = m
-            best_n = n
+    print("=" * 60)
+    print("PROFIL WALIDACYJNY: JEDNOLITA GEOMETRIA POLA")
+    print("=" * 60)
 
-    # Skrócenie ułamka do formy podstawowej
-    common_divisor = gcd(best_m, best_n)
-    m_prime = best_m // common_divisor
-    n_prime = best_n // common_divisor
+    # 1. Skala Atomowa: Stabilność nuklearna wokół punktu żelaza (Struktura domknięta)
+    print("\n[SKALA ATOMOWA] - Test stabilności izotopowej (Helium/Fe):")
+    atom_data = validator.validate_boundary_state(omega_input=400.0, omega_pivot=200.0)
+    for k, v in atom_data.items():
+        print(f"  {k}: {v}")
 
-    # 3. Kryterium 1: Indeks Spójności Geometrycznej (GRI) 
-    # Odpowiednik "czystości interwału". Im niższe m*n, tym stabilniejszy stan geometryczny.
-    geometric_resonance_index = 1.0 / (m_prime * n_prime)
-    
-    # 4. Kryterium 2: Napięcie Pola (Field Tension)
-    # Odchylenie od idealnego węzła. Jeśli delta < tolerance, układ jest w stanie czystego rezonansu.
-    # Jeśli delta jest mierzalna, układ posiada asymetryczne naprężenie.
-    is_resonant = min_delta <= tolerance
-    
-    return {
-        "ratio_string": f"{m_prime}:{n_prime}",
-        "raw_ratio": round(raw_ratio, 4),
-        "geometric_resonance_index": round(geometric_resonance_index, 4),
-        "field_tension_delta": round(min_delta, 6),
-        "is_perfect_resonance": is_resonant
-    }
+    # 2. Skala Makro: Dysk akrecyjny Sgr A* (Niedomknięcie przejściowe -> Emisja ROSAT)
+    print("\n[SKALA MAKRO] - Dynamika transferu energii 2MASS -> ROSAT:")
+    macro_data = validator.validate_boundary_state(omega_input=301.8, omega_pivot=200.0)
+    for k, v in macro_data.items():
+        print(f"  {k}: {v}")
 
-# --- TEST WALIDATORA DLA TRZECH SKAL ---
-
-# 1. Skala Atomowa: Stabilność Żelaza (Idealny stan podstawowy - Oktawa 2:1)
-print("--- SKALA ATOMOWA (Helium/Fe) ---")
-print(calculate_geometric_resonance(omega_input=500.0, omega_pivot=250.0))
-
-# 2. Skala Makro: Dysk akrecyjny Sgr A* (Wzmocnienie dżetu - Kwinta 3:2)
-print("\n--- SKALA MAKRO (Astro-Map) ---")
-print(calculate_geometric_resonance(omega_input=300.1, omega_pivot=200.0))
-
-# 3. Skala Kwantowa: Photon Engine (Szukana asymetria - wysokie naprężenie pola, np. 8:5)
-print("\n--- SKALA KWANTOWA (Photon Engine) ---")
-print(calculate_geometric_resonance(omega_input=800.0, omega_pivot=500.0, tolerance=1e-5))
+    # 3. Skala Kwantowa: Photon Engine (Trwałe niedomknięcie -> Asymetryczny Pęd)
+    # Celowo bardzo niska tolerancja, by uchwycić stały gradient siły napędowej
+    print("\n[SKALA KWANTOWA] - Sztuczna koniunkcja pól (Photon Engine):")
+    quantum_data = validator.validate_boundary_state(omega_input=800.0, omega_pivot=500.0, tolerance=1e-6)
+    for k, v in quantum_data.items():
+        print(f"  {k}: {v}")
+    print("=" * 60)
