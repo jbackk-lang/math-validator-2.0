@@ -96,3 +96,34 @@ Walidator może wykryć:
 
 *(To nie są „rozwiązania”, tylko przykłady równań używanych w testach walidatora.)*
 
+Gdy teraz uruchomisz validate("x2"), słownik FILTERS automatycznie wykona powyższe skrypty, a funkcja zwróci pełną strukturę danych gotową do wysłania na Dashboard Geometrii Pola:
+
+JSON
+{
+  "filters": {
+    "information": { ... },
+    "syntax": { ... },
+    "moebius": {
+      "status": "PASSED",
+      "metric": "Möbius Parity Invariance",
+      "details": "Zachowano ciągłość orientacji Möbiusa."
+    },
+    "topology": {
+      "status": "PASSED",
+      "metric": "Triloop Topological Closure",
+      "details": "Układ zbieżny topologicznie, brak przerw w strukturze węzłów."
+    },
+    "singularity": {
+      "status": "PASSED",
+      "metric": "Singularity & Causality Guard",
+      "details": "Brak osobliwości krytycznych. Oś czasu tau zachowuje monotoniczność."
+    }
+    // ... pozostałe filtry
+  },
+  "stability": {
+    "cycle": 1,
+    "angle": 72,
+    "phase": "UNDEFINED",
+    "orientation": "M_PRIME"
+  }
+}
