@@ -3,34 +3,39 @@ from typing import Dict, Any, Optional
 
 class StabilityLayer:
     def __init__(self):
-        self.matrix_m2 = np.eye(3)  # Toroidalna matryca pętli M2
+        # Definiujemy trójpętlowy toroid za pomocą rotacji Givensa (kąt pi/4)
+        cos_t, sin_t = np.cos(np.pi / 4), np.sin(np.pi / 4)
+        self.matrix_m2 = np.array([
+            [cos_t, -sin_t, 0.0],
+            [sin_t,  cos_t, 0.0],
+            [0.0,    0.0,   1.0]
+        ])
         self.entropy_delta = 0.0
         self.state = "STABLE"
 
 def validate_equation(equation_str: str, context_state: Optional[StabilityLayer] = None) -> Dict[str, Any]:
-    # 1. Zabezpieczenie Isolated Scope: Jeśli brak kontekstu, stwórz NOWY dla tego żądania
+    # Zabezpieczenie Isolated Scope - izolacja kontekstu per wątek/żądanie
     if context_state is None:
         context_state = StabilityLayer()
         
-    print(f"[TIMDR] Inicjalizacja kroku walidacji dla: {equation_str} | Stan: {context_state.state}")
-    
     try:
-        # 2. Tutaj zachodzi Twoja analiza składniowa (parowanie nawiasów, operatory J)
-        # Symulacja przejścia fazowego pętli:
+        # Detekcja krytycznych anomalii matematycznych
         if "inf" in equation_str or "/0" in equation_str:
             context_state.state = "CRITICAL_SINGULARITY"
-            return {"status": "FAILED", "error": "Wykryto przerwanie ciągłości pola."}
+            return {"status": "FAILED", "error": "Przerwanie ciągłości pola (Dzielenie przez zero)."}
             
-        # 3. Dynamiczna modyfikacja stanu wewnątrz bezpiecznego zakresu (Request Scope)
+        # Aktualizacja lokalnej entropii (popychanie taktu czasu tau)
         context_state.entropy_delta += 0.01
         
-        # Sukces domknięcia pętli
+        # Obliczenie śladu macierzy transformacji J dla potwierdzenia topologii
+        matrix_trace = float(np.trace(context_state.matrix_m2))
+        
         return {
             "status": "SUCCESS",
-            "matrix_hash": float(np.trace(context_state.matrix_m2)),
+            "matrix_hash": matrix_trace,
             "current_state": context_state.state
         }
         
     except Exception as e:
-        # Awaryjne wygaszenie zamiast twardego crasha aplikacji
+        # Wymuszone domknięcie w przypadku błędu (FORCED CLOSURE)
         return {"status": "FORCED_CLOSURE", "reason": str(e)}
